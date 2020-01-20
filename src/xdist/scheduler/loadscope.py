@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from _pytest.runner import CollectReport
 from py.log import Producer
+
 from xdist.report import report_collection_diff
 from xdist.workermanage import parse_spec_config
 
@@ -219,7 +220,6 @@ class LoadScopeScheduling(object):
 
             # Check that the new collection matches the official collection
             if collection != self.collection:
-
                 other_node = next(iter(self.registered_collections.keys()))
 
                 msg = report_collection_diff(
@@ -248,6 +248,19 @@ class LoadScopeScheduling(object):
         assert self.workqueue
 
         # Grab a unit of work
+        # scope, work_unit = self.workqueue.popitem(last=False)
+        scope = next(iter(self.workqueue.keys()))
+        if scope == 'test_acl_0052':
+            # waiting other node stop
+            for node in self.nodes:
+                for nodeid, complete in self.assigned_work[node].items():
+                    if not complete:
+                        return
+
+            for node in self.nodes:
+                if node != node:
+                    self.remove_node(node)
+                    node.shutdown()
         scope, work_unit = self.workqueue.popitem(last=False)
 
         # Keep track of the assigned work
